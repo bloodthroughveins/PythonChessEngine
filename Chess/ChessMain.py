@@ -23,6 +23,7 @@ def load_images():
 
 """
 Main driver handles the users inputs and handles the updating/frames of graphics and updates them accordingly
+hopefully adding drag and drop wont fuck with pygames renderer
 """
 def main():
     screen = p.display.set_mode((WIDTH, HEIGHT))
@@ -31,13 +32,33 @@ def main():
     gs = ChessEngine.GameState()    # this right here calls chess engine to load and create the board
     load_images()    # only do this once before the while loop
     running = True
+    sqSelected = () #   no square is selected. keeps track of the last click a user clicked (row colum etc)
+    playerClicks = []      # keeps track of players clicks in a list form
     while running:
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
-            drawGameState(screen, gs)
-            clock.tick(MAX_FPS)
-            p.display.flip()
+            elif e.type == p.MOUSEBUTTONDOWN:
+                location = p.mouse.get_pos()    # (x , y) of location of mouse
+                col = location[0]//SQ_SIZE
+                row = location[1]//SQ_SIZE
+                if sqSelected == (row, col):    # player clcked the same square twice
+                    sqSelected = ()     #   deselect
+                    playerClicks = []   # clear player clicks
+                else:
+                    sqSelected = (row, col)
+                    playerClicks.append(sqSelected)     #append for both 1 and 2nd clicks
+                if len(playerClicks) == 2:  #   after 2nd click
+                    move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
+                    print(move.getChessNotation())
+                    gs.makeMove(move)
+                    sqSelected = ()     # resets the players clicks if not will infinitely append
+                    playerClicks = []
+
+
+        drawGameState(screen, gs)
+        clock.tick(MAX_FPS)
+        p.display.flip()
 
         """     
 responsible for all the graphics within a game state
